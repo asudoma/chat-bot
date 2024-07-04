@@ -4,4 +4,4 @@ services:
       context: .
     env_file:
       - prod.env
-    restart: on-failure
+    restart: always
