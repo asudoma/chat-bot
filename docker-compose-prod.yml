@@ -5,7 +5,4 @@ services:
       context: .
     env_file:
       - prod.env
-
-volumes:
-#  redis_data:
-  mongo_data:
+    restart: on-failure

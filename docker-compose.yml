@@ -1,15 +1,5 @@
 version: '3'
 services:
-
-#  redis:
-#    image: redis:latest
-#    command: redis-server --bind redis --appendonly yes
-#    restart: always
-#    ports:
-#      - 6379:6379
-#    volumes:
-#      - redis_data:/data
-
   mongo:
     image: mongo:latest
     ports:
@@ -18,5 +8,4 @@ services:
       - mongo_data:/data/db
 
 volumes:
-#  redis_data:
   mongo_data:
