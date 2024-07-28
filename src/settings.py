@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings
 
 
@@ -9,6 +11,7 @@ class Settings(BaseSettings):
     mongo_db_name: str = "chatbot"
     support_email: str = "artem.sudoma@gmail.com"
     sentry_dsn: str | None = None
+    model_name: Literal["gpt-4o-mini", "gpt-4o"]
 
 
 settings = Settings()

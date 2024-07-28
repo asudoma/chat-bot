@@ -3,6 +3,7 @@ from openai import AsyncOpenAI
 
 from database.models import Chat, Message, User
 from database.repositories import ChatRepository, MessageRepository, UserRepository
+from settings import settings
 
 
 class ChatService:
@@ -66,7 +67,7 @@ class ChatService:
         }
         # context.append({"role": "user", "content": message})
         chat_completion = await self.openai_client.chat.completions.create(
-            messages=[system_content, {"role": "user", "content": message}], model="gpt-4o"
+            messages=[system_content, {"role": "user", "content": message}], model=settings.model_name
         )
         # chat_completion = await self.openai_client.chat.completions.create(
         #     messages=[system_content] + context[-5:], model="gpt-4o"
