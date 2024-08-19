@@ -42,9 +42,11 @@ class ChatService:
             )
             return answer
         if message.type == "user_text":
-            answer = await self.create_reply(message.text)
+            answer = await self.create_reply(message.text, self.chat.chat_id)
             await self.message_repository.create(
-                Message(chat_id=message.chat_id, role="server", type="answer", text=answer)
+                Message(
+                    chat_id=message.chat_id, role="server", type="answer", text=answer, model_name=settings.model_name
+                )
             )
             return answer
 
@@ -60,18 +62,27 @@ class ChatService:
         else:
             return "Пока, к сожалению, такой команды не знаю 😊"
 
-    async def create_reply(self, message: str) -> str:
-        system_content = {
-            "role": "system",
-            "content": "You are helpful unobtrusive assistant. Your name is Чарли",
-        }
-        # context.append({"role": "user", "content": message})
-        chat_completion = await self.openai_client.chat.completions.create(
-            messages=[system_content, {"role": "user", "content": message}], model=settings.model_name
-        )
-        # chat_completion = await self.openai_client.chat.completions.create(
-        #     messages=[system_content] + context[-5:], model="gpt-4o"
-        # )
+    async def create_reply(self, message: str, chat_id: int) -> str:
+        messages = [
+            {
+                "role": "system",
+                "content": "You are helpful unobtrusive assistant. Your name is Чарли.",
+            }
+        ]
+        context = await self.create_context(self.chat.chat_id)
+        if context:
+            messages.extend(context)
+        messages.append({"role": "user", "content": message})
+        chat_completion = await self.openai_client.chat.completions.create(messages=messages, model=settings.model_name)
         assistant_message = chat_completion.choices[0].message.content
-        # context.append({"role": "assistant", "content": assistant_message})
         return assistant_message
+
+    async def create_context(self, chat_id: int) -> list[dict]:
+        last_messages = await self.message_repository.get_last_messages(chat_id, settings.context_length)
+        if not last_messages:
+            return []
+        result = []
+        for message in reversed(last_messages):
+            role = message.role if message.role == "user" else "assistant"
+            result.append({"role": role, "content": message.text})
+        return result

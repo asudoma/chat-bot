@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     support_email: str = "artem.sudoma@gmail.com"
     sentry_dsn: str | None = None
     model_name: Literal["gpt-4o-mini", "gpt-4o"]
+    context_length: int = 10
 
 
 settings = Settings()

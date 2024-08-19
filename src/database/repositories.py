@@ -47,3 +47,15 @@ class MessageRepository:
 
     async def create(self, message: Message):
         await self._collection.insert_one(message.model_dump(exclude_none=True))
+
+    async def get_last_messages(
+        self, chat_id: int, count_messages: int, message_type: str | None = None
+    ) -> list[Message]:
+        params = {
+            "chat_id": chat_id,
+        }
+        if message_type:
+            params["message_type"] = message_type
+        cursor = self._collection.find(params).skip(1).sort({"created": -1})
+        result = await cursor.to_list(length=count_messages)
+        return [Message.parse_obj(item) for item in result]

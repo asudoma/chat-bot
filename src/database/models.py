@@ -34,4 +34,5 @@ class Message(BaseModel):
     type: Literal["command", "command_answer", "user_text", "answer"]
     text: str = Field()
     chat_id: int | None = None
+    model_name: str | None = None
     created: datetime = Field(default_factory=lambda: datetime.now(UTC), populate_by_name=True, alias="date")
