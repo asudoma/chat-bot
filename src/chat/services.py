@@ -42,7 +42,7 @@ class ChatService:
             )
             return answer
         if message.type == "user_text":
-            answer = await self.create_reply(message.text, self.chat.chat_id)
+            answer = await self.create_reply(message.text)
             await self.message_repository.create(
                 Message(
                     chat_id=message.chat_id, role="server", type="answer", text=answer, model_name=settings.model_name
@@ -62,7 +62,7 @@ class ChatService:
         else:
             return "Пока, к сожалению, такой команды не знаю 😊"
 
-    async def create_reply(self, message: str, chat_id: int) -> str:
+    async def create_reply(self, message: str) -> str:
         messages = [
             {
                 "role": "system",
