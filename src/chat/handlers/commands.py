@@ -1,6 +1,6 @@
 from typing import Optional
 
-from src import __version__
+from version import __version__
 
 
 def register_commands(manager: "CommandManager"):
