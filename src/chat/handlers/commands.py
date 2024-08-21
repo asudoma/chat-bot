@@ -1,4 +1,5 @@
 from typing import Optional
+
 from src import __version__
 
 
