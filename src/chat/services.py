@@ -1,6 +1,8 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from openai import AsyncOpenAI
 
+from chat.handlers.commands import CommandManager
+from chat.models import ReplyData
 from database.models import Chat, Message, User
 from database.repositories import ChatRepository, MessageRepository, UserRepository
 from settings import settings
@@ -15,15 +17,19 @@ class ChatService:
         "openai_client",
         "chat",
         "message_repository",
+        "command_manager",
     )
 
-    def __init__(self, user: User, openai_client: AsyncOpenAI, database: AsyncIOMotorDatabase):
+    def __init__(
+        self, user: User, openai_client: AsyncOpenAI, database: AsyncIOMotorDatabase, command_manager: CommandManager
+    ):
         self.user = user
         self.openai_client = openai_client
         self.database = database
         self.user_repository = UserRepository(database=self.database)
         self.chat_repository = ChatRepository(database=self.database)
         self.message_repository = MessageRepository(database=self.database)
+        self.command_manager: CommandManager = command_manager
         self.chat: Chat | None = None
 
     async def set_chat(self, chat: Chat):
@@ -42,27 +48,28 @@ class ChatService:
             )
             return answer
         if message.type == "user_text":
-            answer = await self.create_reply(message.text)
+            answer_data = await self.create_reply(message.text)
             await self.message_repository.create(
                 Message(
-                    chat_id=message.chat_id, role="server", type="answer", text=answer, model_name=settings.model_name
+                    chat_id=message.chat_id,
+                    role="server",
+                    type="consultant",
+                    text=answer_data.content,
+                    model_name=settings.model_name,
+                    usage={
+                        "prompt_tokens": answer_data.prompt_tokens,
+                        "total_tokens": answer_data.total_tokens,
+                        "model_name": answer_data.model_name,
+                    },
                 )
             )
-            return answer
+            return answer_data.content
 
     async def process_command(self, text: str) -> str:
-        if text == "/start":
-            return (
-                "Привет! 😃 Я ваш дружелюбный текстовый бот, всегда готов помочь с любыми задачами. "
-                "Вопросы, идеи или просто поболтать — я всегда здесь для вас!\n"
-                "Пока что могу общаться только текстом, но скоро у меня появится еще больше возможностей, "
-                "и тогда наше общение станет еще круче. Если что-то нужно или есть вопросы, не стесняйся, пиши! 😊\n"
-                "Кстати, как тебя зовут?"
-            )
-        else:
-            return "Пока, к сожалению, такой команды не знаю 😊"
+        command = self.command_manager.get_handler(text)
+        return await command.process()
 
-    async def create_reply(self, message: str) -> str:
+    async def create_reply(self, message: str) -> ReplyData:
         messages = [
             {
                 "role": "system",
@@ -74,8 +81,12 @@ class ChatService:
             messages.extend(context)
         messages.append({"role": "user", "content": message})
         chat_completion = await self.openai_client.chat.completions.create(messages=messages, model=settings.model_name)
-        assistant_message = chat_completion.choices[0].message.content
-        return assistant_message
+        return ReplyData(
+            content=chat_completion.choices[0].message.content,
+            prompt_tokens=chat_completion.usage.prompt_tokens,
+            total_tokens=chat_completion.usage.total_tokens,
+            model_name=chat_completion.model,
+        )
 
     async def create_context(self, chat_id: int) -> list[dict]:
         last_messages = await self.message_repository.get_last_messages(chat_id, settings.context_length)

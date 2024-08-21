@@ -35,4 +35,5 @@ class Message(BaseModel):
     text: str = Field()
     chat_id: int | None = None
     model_name: str | None = None
+    usage: dict | None = Field(default_factory=dict)
     created: datetime = Field(default_factory=lambda: datetime.now(UTC), populate_by_name=True, alias="date")
