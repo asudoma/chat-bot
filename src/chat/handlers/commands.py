@@ -1,4 +1,10 @@
 from typing import Optional
+from src import __version__
+
+
+def register_commands(manager: "CommandManager"):
+    manager.register("/start", StartCommandHandler)
+    manager.register("/version", VersionCommandHandler)
 
 
 class CommandManager:
@@ -9,7 +15,7 @@ class CommandManager:
     def singleton(cls) -> "CommandManager":
         if cls._singleton is None:
             cls._singleton = CommandManager()
-            cls._singleton.register("/start", StartCommandHandler)
+            register_commands(cls._singleton)
         return cls._singleton
 
     @classmethod
@@ -44,3 +50,8 @@ class StartCommandHandler(CommandHandlerBase):
 class UnknownCommandHandler(CommandHandlerBase):
     async def process(self) -> str:
         return "Пока, к сожалению, такой команды не знаю 😊"
+
+
+class VersionCommandHandler(CommandHandlerBase):
+    async def process(self) -> str:
+        return __version__
