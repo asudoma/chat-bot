@@ -56,6 +56,7 @@ class MessageRepository:
         }
         if message_type:
             params["message_type"] = message_type
+        params["$and"] = [{"type": {"$ne": "command"}}, {"type": {"$ne": "command_answer"}}]
         cursor = self._collection.find(params).skip(1).sort({"created": -1})
         result = await cursor.to_list(length=count_messages)
         return [Message.parse_obj(item) for item in result]

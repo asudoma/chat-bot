@@ -31,7 +31,7 @@ class Message(BaseModel):
 
     message_id: int | None = Field(alias="id", default=None)
     role: Literal["user", "server"]
-    type: Literal["command", "command_answer", "user_text", "consultant"]
+    type: Literal["command", "command_answer", "user_text", "answer", "consultant"]
     text: str = Field()
     chat_id: int | None = None
     model_name: str | None = None
