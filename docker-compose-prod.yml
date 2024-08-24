@@ -6,7 +6,7 @@ services:
       - prod.env
     restart: always
     networks:
-      chatbot-network
+      - chatbot-network
 
 networks:
   chatbot-network:
