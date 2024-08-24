@@ -27,13 +27,14 @@ class Chat(BaseModel):
 
 
 class Message(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, arbitrary_types_allowed=True)
 
     message_id: int | None = Field(alias="id", default=None)
     role: Literal["user", "server"]
-    type: Literal["command", "command_answer", "user_text", "answer", "consultant"]
-    text: str = Field()
+    type: Literal["command", "command_answer", "user_text", "answer", "consultant", "user_voice"]
+    text: str | None = None
     chat_id: int | None = None
     model_name: str | None = None
     usage: dict | None = Field(default_factory=dict)
     created: datetime = Field(default_factory=lambda: datetime.now(UTC), populate_by_name=True, alias="date")
+    voice_params: dict | None = None

@@ -14,5 +14,7 @@ class Settings(BaseSettings):
     model_name: Literal["gpt-4o-mini", "gpt-4o"]
     context_length: int = 10
 
+    file_server_domain: str = "http://localhost:8001"
+
 
 settings = Settings()

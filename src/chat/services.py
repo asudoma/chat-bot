@@ -64,6 +64,23 @@ class ChatService:
                 )
             )
             return answer_data.content
+        if message.type == "user_voice":
+            answer_data = await self.create_reply(message.text)
+            await self.message_repository.create(
+                Message(
+                    chat_id=message.chat_id,
+                    role="server",
+                    type="consultant",
+                    text=answer_data.content,
+                    model_name=settings.model_name,
+                    usage={
+                        "prompt_tokens": answer_data.prompt_tokens,
+                        "total_tokens": answer_data.total_tokens,
+                        "model_name": answer_data.model_name,
+                    },
+                )
+            )
+            return answer_data.content
 
     async def process_command(self, text: str) -> str:
         command = self.command_manager.get_handler(text)
