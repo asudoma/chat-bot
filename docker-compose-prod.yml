@@ -5,3 +5,10 @@ services:
     env_file:
       - prod.env
     restart: always
+    networks:
+      chatbot-network
+
+networks:
+  chatbot-network:
+    driver: bridge
+    name: chatbot-network
