@@ -2,9 +2,7 @@ from pydantic import BaseModel, HttpUrl, field_serializer
 
 
 class RecognizeVoiceRequestModel(BaseModel):
-    file_id: str
     file_url: HttpUrl | str
-    file_size: int
     file_unique_id: str
     entity_id: str
 
@@ -15,3 +13,8 @@ class RecognizeVoiceRequestModel(BaseModel):
 
 class RecognizeVoiceResponseModel(BaseModel):
     text: str
+
+
+class RecognizeYoutubeRequestModel(BaseModel):
+    url: HttpUrl | str
+    entity_id: str

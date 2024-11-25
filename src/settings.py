@@ -3,7 +3,12 @@ from typing import Literal
 from pydantic_settings import BaseSettings
 
 
+class FileServer(BaseSettings):
+    recognition_timeout: int = 60
+
+
 class Settings(BaseSettings):
+    file_server: FileServer = FileServer()
     bot_token: str
     log_level: str = "INFO"
     openai_secret_key: str

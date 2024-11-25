@@ -1,8 +1,12 @@
+import httpx
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from openai import AsyncOpenAI
 
 from chat.handlers.commands import CommandManager
 from chat.models import ReplyData
+from chat.utils import check_youtube_id
+from clients.file_server.client import Client as FileClient
+from clients.file_server.models import RecognizeYoutubeRequestModel
 from database.models import Chat, Message, User
 from database.repositories import ChatRepository, MessageRepository, UserRepository
 from settings import settings
@@ -48,7 +52,10 @@ class ChatService:
             )
             return answer
         if message.type == "user_text":
-            answer_data = await self.create_reply(message.text)
+            if check_youtube_id(message.text):
+                answer_data = await self.create_youtube_summary(message.text)
+            else:
+                answer_data = await self.create_reply(message.text)
             await self.message_repository.create(
                 Message(
                     chat_id=message.chat_id,
@@ -97,6 +104,35 @@ class ChatService:
         if context:
             messages.extend(context)
         messages.append({"role": "user", "content": message})
+        chat_completion = await self.openai_client.chat.completions.create(messages=messages, model=settings.model_name)
+        return ReplyData(
+            content=chat_completion.choices[0].message.content,
+            prompt_tokens=chat_completion.usage.prompt_tokens,
+            total_tokens=chat_completion.usage.total_tokens,
+            model_name=chat_completion.model,
+        )
+
+    async def create_youtube_summary(self, message: str) -> ReplyData:
+        async with httpx.AsyncClient() as client:
+            file_client = FileClient(client)
+            request_model = RecognizeYoutubeRequestModel(
+                url=message,
+                entity_id=f"chatbot/user_{self.chat.chat_id}",
+            )
+            result = await file_client.recognize_youtube(request_model)
+
+        messages = [
+            {"role": "system", "content": "You make summaries for long text."},
+            {
+                "role": "user",
+                "content": f"Please summarize the following text. "
+                f"Break the summary into clear paragraphs and highlight "
+                f"the main ideas or key points in each paragraph. "
+                f"Ensure that the summary captures the essence of the original text "
+                f"while being concise and easy to understand. The result should be in Russian. "
+                f"Here is the text to summarize: {result.text}.",
+            },
+        ]
         chat_completion = await self.openai_client.chat.completions.create(messages=messages, model=settings.model_name)
         return ReplyData(
             content=chat_completion.choices[0].message.content,

@@ -5,6 +5,7 @@ from clients.file_server.exceptions import ServerNotWorkingError, WrongResponseE
 from clients.file_server.models import (
     RecognizeVoiceRequestModel,
     RecognizeVoiceResponseModel,
+    RecognizeYoutubeRequestModel,
 )
 from settings import settings
 
@@ -41,6 +42,22 @@ class Client:
 
         try:
             response = await self._request("POST", "/voice/recognize", json=data.model_dump())
+        except ConnectError as exc:
+            sentry_sdk.capture_exception(exc)
+            raise ServerNotWorkingError
+        if response.status_code != 200:
+            sentry_sdk.capture_message(response.text)
+            raise WrongResponseError
+        return RecognizeVoiceResponseModel.model_validate(response.json())
+
+    async def recognize_youtube(self, data: RecognizeYoutubeRequestModel) -> RecognizeVoiceResponseModel:
+        try:
+            response = await self._request(
+                "POST",
+                "/voice/youtube/recognize",
+                json=data.model_dump(),
+                timeout=settings.file_server.recognition_timeout,
+            )
         except ConnectError as exc:
             sentry_sdk.capture_exception(exc)
             raise ServerNotWorkingError

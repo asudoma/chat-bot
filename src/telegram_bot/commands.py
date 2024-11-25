@@ -46,11 +46,9 @@ async def process_voice(update: Update, context: ContextTypes.DEFAULT_TYPE, user
     async with httpx.AsyncClient() as client:
         file_client = FileClient(client)
         request_model = RecognizeVoiceRequestModel(
-            file_id=file.file_id,
             file_url=file.file_path,
-            file_size=file.file_size,
             file_unique_id=file.file_unique_id,
-            entity_id=str(update.effective_chat.id),
+            entity_id=f"chatbot/user_{update.effective_chat.id}",
         )
         try:
             result = await file_client.recognize_speech(request_model)
