@@ -1,7 +1,11 @@
 import sentry_sdk
 from httpx import AsyncClient, ConnectError, Response
 
-from clients.file_server.exceptions import ServerNotWorkingError, WrongResponseError
+from clients.file_server.exceptions import (
+    ServerNotWorkingError,
+    WrongResponseError,
+    YoutubeError,
+)
 from clients.file_server.models import (
     RecognizeVoiceRequestModel,
     RecognizeVoiceResponseModel,
@@ -61,6 +65,14 @@ class Client:
         except ConnectError as exc:
             sentry_sdk.capture_exception(exc)
             raise ServerNotWorkingError
+        if response.status_code == 400:
+            error = response.json()
+            if error.get("code", 0) >= 1000:
+                raise YoutubeError(
+                    code=error["code"],
+                    message=error["message"],
+                    details=error["details"],
+                )
         if response.status_code != 200:
             sentry_sdk.capture_message(response.text)
             raise WrongResponseError
