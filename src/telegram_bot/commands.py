@@ -1,5 +1,8 @@
+import re
+
 from sentry_sdk.integrations import httpx
 from telegram import File, Update
+from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from clients.file_server.client import Client as FileClient
@@ -9,6 +12,11 @@ from database.models import Message, User
 from telegram_bot.decorators import bot_is_typing, provide_user
 from telegram_bot.exception_handler import exception_handler
 from telegram_bot.helpers import create_chat_service
+
+
+def escape_markdown(text: str) -> str:
+    escape_chars = r"\_[]()~`>#+-=|{}.!"
+    return re.sub(f"([{re.escape(escape_chars)}])", r"\\\1", text)
 
 
 @provide_user
@@ -32,7 +40,11 @@ async def process_message(update: Update, context: ContextTypes.DEFAULT_TYPE, us
     answer = await chat_service.create_message(
         Message(message_id=message.id, role="user", text=message.text, created=message.date, type="user_text")
     )
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=answer)
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=escape_markdown(answer.replace("**", "*")),
+        parse_mode=ParseMode.MARKDOWN_V2,
+    )
 
 
 @provide_user
